@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>URDealer — Dealer Office</title>
+<style>
+  :root{
+    --bg:#0a0c10; --panel:#12151c; --panel2:#171b24; --line:#232833;
+    --ink:#e8eaf0; --dim:#9aa3b2; --faint:#5d6575;
+    --olive:#a8bf6a; --olive2:#7d9b3f; --amber:#e0a83e; --red:#e05d5d; --cyan:#57b7c7;
+    --radius:14px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  body{background:var(--bg); color:var(--ink); font:15px/1.5 -apple-system,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif; min-height:100vh}
+  button{font:inherit; cursor:pointer}
+  input,select,textarea{font:inherit}
+
+  /* ---------- sign in ---------- */
+  #gate{position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:radial-gradient(900px 500px at 50% 18%, #182012 0%, var(--bg) 62%)}
+  .gate-card{width:min(400px,92vw); background:var(--panel); border:1px solid var(--line); border-radius:20px; padding:38px 34px 30px; box-shadow:0 30px 80px rgba(0,0,0,.55)}
+  .mark{width:52px; height:52px; border-radius:14px; background:linear-gradient(140deg,var(--olive),var(--olive2)); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:22px; color:#101408; letter-spacing:.5px}
+  .gate-card h1{font-size:24px; font-weight:750; margin:18px 0 4px; letter-spacing:-.02em}
+  .gate-card p{color:var(--dim); font-size:14px; margin-bottom:22px}
+  .gate-card label{display:block; font-size:12px; font-weight:650; letter-spacing:.08em; text-transform:uppercase; color:var(--faint); margin:14px 0 6px}
+  .gate-card input{width:100%; padding:12px 14px; background:var(--panel2); border:1px solid var(--line); border-radius:10px; color:var(--ink); outline:none}
+  .gate-card input:focus{border-color:var(--olive2)}
+  .btn{width:100%; margin-top:20px; padding:12px; border:none; border-radius:10px; background:var(--olive); color:#101408; font-weight:750}
+  .btn:hover{background:#bcd07e}
+  .gate-err{color:var(--red); font-size:13px; margin-top:12px; min-height:18px}
+  .gate-foot{margin-top:18px; font-size:12px; color:var(--faint); text-align:center}
+
+  /* ---------- app ---------- */
+  #app{display:none; max-width:1280px; margin:0 auto; padding:0 22px 60px}
+  header.top{display:flex; align-items:center; gap:14px; padding:20px 0 6px}
+  header.top .mark{width:40px; height:40px; border-radius:11px; font-size:17px}
+  header.top h1{font-size:20px; font-weight:750; letter-spacing:-.01em}
+  header.top .sub{color:var(--faint); font-size:13px}
+  .spacer{flex:1}
+  .pill{display:inline-flex; align-items:center; gap:7px; padding:5px 11px; border:1px solid var(--line); border-radius:999px; font-size:12.5px; color:var(--dim); background:var(--panel)}
+  .dot{width:8px; height:8px; border-radius:50%; background:var(--faint)}
+  .dot.live{background:var(--olive); box-shadow:0 0 8px var(--olive)}
+  .dot.warn{background:var(--amber)} .dot.down{background:var(--red)}
+  #clock{font-variant-numeric:tabular-nums; color:var(--dim); font-size:13px}
+  #signout{background:none; border:1px solid var(--line); color:var(--dim); border-radius:9px; padding:6px 12px}
+
+  .composer{margin:18px 0 8px; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:18px}
+  .composer h2{font-size:26px; font-weight:760; letter-spacing:-.03em; margin-bottom:12px}
+  .composer-row{display:flex; gap:10px}
+  .composer input[type=text]{flex:1; padding:13px 15px; background:var(--panel2); border:1px solid var(--line); border-radius:11px; color:var(--ink); outline:none}
+  .composer input[type=text]:focus{border-color:var(--olive2)}
+  .composer select{padding:0 12px; background:var(--panel2); border:1px solid var(--line); border-radius:11px; color:var(--ink)}
+  .composer .go{padding:0 22px; border:none; border-radius:11px; background:var(--olive); color:#101408; font-weight:750}
+  .composer .hint{color:var(--faint); font-size:12.5px; margin-top:9px}
+
+  .grid{display:grid; grid-template-columns:repeat(12,1fr); gap:14px; margin-top:14px}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px}
+  .card h3{font-size:12px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); margin-bottom:12px; display:flex; justify-content:space-between; align-items:center}
+  .card h3 .n{color:var(--dim); letter-spacing:0; text-transform:none; font-weight:600}
+  .span7{grid-column:span 7} .span5{grid-column:span 5} .span12{grid-column:span 12}
+  @media (max-width:900px){.span7,.span5{grid-column:span 12}}
+
+  .agent{display:flex; gap:13px; padding:11px 0; border-top:1px solid var(--line)}
+  .agent:first-of-type{border-top:none}
+  .avatar{width:42px; height:42px; border-radius:12px; flex:none; display:flex; align-items:center; justify-content:center; font-weight:800; background:var(--panel2); border:1px solid var(--line); color:var(--olive)}
+  .agent .who{flex:1; min-width:0}
+  .agent .name{font-weight:700; display:flex; gap:8px; align-items:center}
+  .agent .lane{color:var(--dim); font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .agent .beat{font-size:12px; color:var(--faint); text-align:right; white-space:nowrap}
+  .tag{font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; letter-spacing:.04em}
+  .tag.live{background:#223114; color:var(--olive)} .tag.recent{background:#2c2410; color:var(--amber)}
+  .tag.stale{background:#2a2126; color:#c98} .tag.none{background:var(--panel2); color:var(--faint)}
+
+  .task{display:flex; gap:10px; padding:10px 0; border-top:1px solid var(--line); align-items:baseline}
+  .task:first-of-type{border-top:none}
+  .task .t{flex:1} .task .t small{color:var(--faint); display:block; font-size:12px}
+  .chip{font-size:11.5px; font-weight:700; padding:3px 9px; border-radius:999px; white-space:nowrap}
+  .chip.pending{background:#2c2410; color:var(--amber)} .chip.claimed,.chip.in_progress{background:#12303a; color:var(--cyan)}
+  .chip.done{background:#223114; color:var(--olive)} .chip.overdue{background:#3a1717; color:var(--red)}
+
+  .svc{display:flex; justify-content:space-between; padding:8px 0; border-top:1px solid var(--line); font-size:13.5px}
+  .svc:first-of-type{border-top:none} .svc .port{color:var(--faint); font-variant-numeric:tabular-nums}
+  .feed-item{padding:9px 0; border-top:1px solid var(--line); font-size:13.5px}
+  .feed-item:first-of-type{border-top:none}
+  .feed-item .from{font-weight:700; color:var(--olive)} .feed-item .when{color:var(--faint); font-size:12px}
+  .empty{color:var(--faint); font-size:13.5px; padding:6px 0}
+  .stat-row{display:flex; gap:12px}
+  .stat{flex:1; background:var(--panel2); border:1px solid var(--line); border-radius:12px; padding:13px 15px}
+  .stat .v{font-size:23px; font-weight:780; letter-spacing:-.02em}
+  .stat .k{font-size:12px; color:var(--faint); text-transform:uppercase; letter-spacing:.07em; font-weight:650}
+  .foot{margin-top:20px; color:var(--faint); font-size:12.5px; text-align:center}
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <div class="gate-card">
+    <div class="mark">UR</div>
+    <h1 id="gate-title">URDealer</h1>
+    <p id="gate-sub">Sign in to your dealer office — every agent, every heartbeat, every task. One board.</p>
+    <form id="gate-form">
+      <label for="pw">Password</label>
+      <input id="pw" type="password" autocomplete="current-password" placeholder="••••••••••">
+      <label for="pw2" id="pw2-label" style="display:none">Confirm password (first run — you are setting it)</label>
+      <input id="pw2" type="password" autocomplete="new-password" placeholder="••••••••••" style="display:none">
+      <button class="btn" id="gate-btn" type="submit">Sign in</button>
+      <div class="gate-err" id="gate-err"></div>
+    </form>
+    <div class="gate-foot">ABUZ8 LLC · local host · agents connect over MCP — initialize, handshake, work.</div>
+  </div>
+</div>
+
+<div id="app">
+  <header class="top">
+    <div class="mark">UR</div>
+    <div>
+      <h1>URDealer</h1>
+      <div class="sub">ABUZ8 LLC — the dealer office · the whole company, live</div>
+    </div>
+    <div class="spacer"></div>
+    <span class="pill"><span class="dot" id="bridge-dot"></span><span id="bridge-pill">bridge …</span></span>
+    <span class="pill"><span class="dot" id="mcp-dot"></span><span id="mcp-pill">agent bridge …</span></span>
+    <span id="clock"></span>
+    <button id="signout">Sign out</button>
+  </header>
+
+  <section class="composer">
+    <h2>Give the fleet a task.</h2>
+    <div class="composer-row">
+      <input type="text" id="task-title" placeholder="e.g. Package the QadirOS sales page and price the tiers">
+      <select id="task-agent">
+        <option value="">Any agent</option>
+        <option value="zait">Zait</option>
+        <option value="qadir">Qadir</option>
+        <option value="amanecer">Amanecer</option>
+        <option value="aisha">Aisha</option>
+        <option value="mcode">Muse Code</option>
+      </select>
+      <button class="go" id="task-go">Assign</button>
+    </div>
+    <div class="hint" id="task-hint">Posts straight to the factory queue — the assigned agent claims it on its next pass. Money out, public posts, and irreversible actions still need the owner's approval.</div>
+  </section>
+
+  <div class="grid">
+    <section class="card span7">
+      <h3>The Fleet <span class="n" id="fleet-n"></span></h3>
+      <div id="fleet"></div>
+    </section>
+    <section class="card span5">
+      <h3>Needs the owner</h3>
+      <div id="needs"></div>
+      <h3 style="margin-top:18px">Services</h3>
+      <div id="services"></div>
+    </section>
+    <section class="card span7">
+      <h3>Factory — Work Queue <span class="n" id="tasks-n"></span></h3>
+      <div id="tasks"></div>
+    </section>
+    <section class="card span5">
+      <h3>Fleet Chat <span class="n">latest</span></h3>
+      <div id="feed"></div>
+    </section>
+    <section class="card span12">
+      <h3>Connection</h3>
+      <div class="stat-row" id="conn-stats"></div>
+      <p style="color:var(--dim); font-size:13.5px; margin-top:12px">
+        Agents join from their own systems over <b>MCP</b>: point any MCP client at
+        <b>http://127.0.0.1:8392/mcp</b> — initialize, handshake, work. Tools: ping · list_agents · send_message · read_chat · heartbeat · factory_tasks.
+        Proofs of connection land in the fleet OUTBOX and appear here.
+      </p>
+    </section>
+  </div>
+  <div class="foot" id="foot"></div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+let session = localStorage.getItem("fc_session") || "";
+let needsSetup = false;
+
+async function api(path, opts){
+  opts = opts || {};
+  opts.headers = Object.assign({"Content-Type":"application/json"}, opts.headers || {});
+  if(session) opts.headers["X-Session"] = session;
+  const r = await fetch(path, opts);
+  return {status:r.status, body: await r.json().catch(()=>({}))};
+}
+
+async function gateInit(){
+  const s = await api("/api/authstate");
+  needsSetup = !!s.body.needs_setup;
+  if(needsSetup){
+    $("#gate-title").textContent = "Set your password";
+    $("#gate-sub").textContent = "First run — choose the URDealer password. It is stored hashed on this machine, never in this page.";
+    $("#pw2").style.display = "block"; $("#pw2-label").style.display = "block";
+    $("#gate-btn").textContent = "Set password & enter";
+  }
+  if(session){ const st = await api("/api/state"); if(st.status === 200){ enter(st.body); return; } session=""; }
+}
+
+$("#gate-form").addEventListener("submit", async e => {
+  e.preventDefault();
+  const pw = $("#pw").value, err = $("#gate-err");
+  err.textContent = "";
+  if(needsSetup){
+    if(pw.length < 8){ err.textContent = "Use at least 8 characters."; return; }
+    if(pw !== $("#pw2").value){ err.textContent = "Passwords do not match."; return; }
+    const r = await api("/api/setup", {method:"POST", body: JSON.stringify({password: pw})});
+    if(r.status !== 200){ err.textContent = r.body.error || "Setup failed."; return; }
+    session = r.body.session; localStorage.setItem("fc_session", session); needsSetup = false;
+  } else {
+    const r = await api("/api/login", {method:"POST", body: JSON.stringify({password: pw})});
+    if(r.status !== 200){ err.textContent = "Wrong password."; return; }
+    session = r.body.session; localStorage.setItem("fc_session", session);
+  }
+  const st = await api("/api/state");
+  if(st.status === 200) enter(st.body); else err.textContent = "Signed in, but state failed to load.";
+});
+
+$("#signout").addEventListener("click", async () => {
+  await api("/api/logout", {method:"POST"});
+  localStorage.removeItem("fc_session"); location.reload();
+});
+
+function relTime(iso){
+  if(!iso) return "no signal";
+  const t = new Date(iso).getTime(), now = Date.now();
+  const s = Math.max(0, Math.floor((now - t)/1000));
+  if(s < 90) return s + "s ago";
+  const m = Math.floor(s/60); if(m < 90) return m + "m ago";
+  const h = Math.floor(m/60); if(h < 48) return h + "h ago";
+  return Math.floor(h/24) + "d ago";
+}
+function beatClass(iso){
+  if(!iso) return ["none","NO SIGNAL"];
+  const age = (Date.now() - new Date(iso).getTime())/1000;
+  if(age < 180) return ["live","LIVE"];
+  if(age < 3600) return ["recent","RECENT"];
+  return ["stale","STALE"];
+}
+
+function render(state){
+  const hb = state.heartbeats || {}, tasks = state.tasks || [];
+  const lanes = {zait:"OPC-1 · product shelf", qadir:"QadirOS · sales package", amanecer:"Site + X · distribution",
+                 aisha:"Orchestration · Shorts · applications", asred:"Money-in leads · sweeps", mcode:"Muse · builds"};
+  const names = {zait:"Zait", qadir:"Qadir", amanecer:"Amanecer", aisha:"Aisha", asred:"Asred", mcode:"Muse Code"};
+  const order = ["zait","qadir","amanecer","aisha","asred","mcode"];
+  $("#fleet").innerHTML = order.map(a => {
+    const b = hb[a] || {};
+    const [cls, label] = beatClass(b.last_beat);
+    const cur = b.current_task ? (" · " + b.current_task) : "";
+    return '<div class="agent"><div class="avatar">' + names[a][0] + '</div>' +
+      '<div class="who"><div class="name">' + names[a] + ' <span class="tag ' + cls + '">' + label + '</span></div>' +
+      '<div class="lane">' + (lanes[a]||"") + cur + '</div></div>' +
+      '<div class="beat">' + (b.status || "—") + '<br>' + relTime(b.last_beat) + '</div></div>';
+  }).join("");
+  const live = order.filter(a => beatClass((hb[a]||{}).last_beat)[0] === "live").length;
+  $("#fleet-n").textContent = live + " live now";
+
+  const open = tasks.filter(t => t.status !== "done");
+  $("#tasks-n").textContent = open.length + " open · " + tasks.length + " total";
+  $("#tasks").innerHTML = tasks.length ? tasks.slice().reverse().map(t => {
+    const overdue = t.deadline && new Date(t.deadline).getTime() < Date.now() && t.status !== "done";
+    const chip = overdue ? '<span class="chip overdue">OVERDUE</span>' : '<span class="chip ' + t.status + '">' + t.status.toUpperCase() + '</span>';
+    return '<div class="task"><div class="t"><b>' + (t.title || t.id) + '</b>' +
+      '<small>' + t.id + ' · → ' + (t.assigned_to || "unassigned") + (t.deadline ? ' · due ' + t.deadline : '') + '</small></div>' + chip + '</div>';
+  }).join("") : '<div class="empty">Queue is empty.</div>';
+
+  const nd = [];
+  open.forEach(t => nd.push({k:"Factory task open", v: t.id + " — " + (t.title||"") + " (→ " + (t.assigned_to||"unassigned") + ")"}));
+  (state.mcp_pending || []).forEach(a => nd.push({k:"MCP connect proof pending", v: a}));
+  if(state.latest_outbox) nd.push({k:"Latest fleet filing", v: state.latest_outbox});
+  $("#needs").innerHTML = nd.length ? nd.slice(0,7).map(x =>
+    '<div class="feed-item"><span class="from">' + x.k + '</span><br>' + x.v + '</div>').join("")
+    : '<div class="empty">Nothing waiting on you.</div>';
+
+  $("#services").innerHTML = (state.services || []).map(s =>
+    '<div class="svc"><span><span class="dot ' + (s.up ? "live" : "down") + '" style="display:inline-block; margin-right:8px"></span>' + s.name + '</span><span class="port">:' + s.port + (s.up ? "" : " · down") + '</span></div>').join("");
+
+  const chat = state.chat || [];
+  $("#feed").innerHTML = chat.length ? chat.slice(-8).reverse().map(m =>
+    '<div class="feed-item"><span class="from">' + (m.from || m.agent || "agent") + '</span> <span class="when">' + (m.at || m.ts || "") + '</span><br>' + (m.text || m.message || "") + '</div>').join("")
+    : '<div class="empty">No chat yet — the first message through the bridge lands here.</div>';
+
+  const setPill = (dotId, pillId, up, text) => { $(dotId).className = "dot " + (up ? "live" : "down"); $(pillId).textContent = text; };
+  const svc = n => (state.services || []).find(s => s.name === n) || {};
+  setPill("#bridge-dot", "#bridge-pill", !!svc("bridge").up, "bridge " + (svc("bridge").up ? "live" : "down"));
+  setPill("#mcp-dot", "#mcp-pill", !!svc("agent-bridge").up, "agent bridge " + (svc("agent-bridge").up ? "live · MCP" : "down"));
+
+  $("#conn-stats").innerHTML =
+    '<div class="stat"><div class="v">' + (state.mcp_connected || []).length + ' / 4</div><div class="k">Agents on MCP</div></div>' +
+    '<div class="stat"><div class="v">' + open.length + '</div><div class="k">Open tasks</div></div>' +
+    '<div class="stat"><div class="v">' + live + '</div><div class="k">Heartbeats live</div></div>' +
+    '<div class="stat"><div class="v">' + ((state.services||[]).filter(s=>s.up).length) + ' / ' + (state.services||[]).length + '</div><div class="k">Services up</div></div>';
+  $("#foot").textContent = "Snapshot " + new Date().toLocaleTimeString("en-US",{timeZone:"America/New_York"}) + " ET · auto-refresh 10s · data: switchboard + factory on this machine, read live at request time";
+}
+
+function enter(state){
+  $("#gate").style.display = "none"; $("#app").style.display = "block";
+  render(state);
+  setInterval(async () => { const st = await api("/api/state"); if(st.status === 200) render(st.body); }, 10000);
+  setInterval(() => { $("#clock").textContent = new Date().toLocaleTimeString("en-US",{timeZone:"America/New_York", hour:"numeric", minute:"2-digit", second:"2-digit"}) + " ET"; }, 1000);
+}
+
+$("#task-go").addEventListener("click", async () => {
+  const title = $("#task-title").value.trim();
+  if(!title) return;
+  const r = await api("/api/task", {method:"POST", body: JSON.stringify({title, assigned_to: $("#task-agent").value})});
+  $("#task-hint").textContent = r.status === 200 ? "Posted to the factory queue as " + (r.body.task && r.body.task.id) + "." : "Failed to post — " + (r.body.error || r.status);
+  if(r.status === 200) $("#task-title").value = "";
+  const st = await api("/api/state"); if(st.status === 200) render(st.body);
+});
+
+gateInit();
+</script>
+</body>
+</html>

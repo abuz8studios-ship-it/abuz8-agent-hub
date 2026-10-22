@@ -1,0 +1,19 @@
+# Secrets and local credentials — never commit
+switchboard_api_token.txt
+*token*.txt
+.env
+*.env
+dashboard_auth.json
+
+# Local fleet mailbox data
+agent-orders/
+INBOX/
+OUTBOX/
+
+# Python
+__pycache__/
+*.pyc
+
+# Logs and scratch
+*.log
+*.b64
